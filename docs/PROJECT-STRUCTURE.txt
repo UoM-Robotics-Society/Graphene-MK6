@@ -1,0 +1,72 @@
+Project Structure
+==============================================================================
+The overall structure of the project is loosely documented in the
+`robot-orchestra-project-structure.png` file, and a summary of the diagram is
+as follows:
+- the repository is broken down into a set of "top-level" projects
+  (executables) and a set of supporting projects (libraries)
+- the top-level projects are "graphene" (the conductor program) and the
+  "instruments" (all projects under the `instruments/` directory)
+- the supporting projects are "libgraphene", "libmusician", "hal", and the
+  "boards" (all projects under the `boards/` directory)
+
+Project Structure: HAL
+------------------------------------------------------------------------------
+The orchestra uses multiple different microcontrollers, so to reuse the
+existing hardware a hardware abstraction layer is included to provide a
+unified interface for baremetal programs.
+
+The hal project comprises:
+- generic interfaces for the minimal set of hardware services required
+- method declarations for board-specific implementations of hardware services
+
+Project Structure: Boards
+------------------------------------------------------------------------------
+Each microcontroller in use requires initialisation code to bring it up into a
+known state and driver code for the available hardware services, to allow
+access to said services via the HAL.
+
+The boards/* projects comprise:
+- startup code for initialising the microcontroller
+- board-specifc implementations of hardware services declared in the HAL
+
+Project Structure: LibGraphene
+------------------------------------------------------------------------------
+Both the musicians and the conductor have to communicate via a network, so the
+network stack interface and the layout of all data to be sent over the network
+needs to be agreed upon by both the conductor and the musicians.
+
+The libgraphene project comprises:
+- generic network stack interface for the conductor-musician transport
+- definitions of common data structures
+
+Project Structure: LibMusician
+------------------------------------------------------------------------------
+Each musician in the orchestra has mostly identical control code, requiring
+access to the orchestra network, managing of internal state, and holding any
+temporary data such as orchestral configuration or buffered part scores.
+
+The libmusician project comprises:
+- implementation of the network stack for the conductor-musician transport
+- state management via FSMs for the loader and player for each musician
+- declaration of the part score buffer
+
+Project Structure: Graphene
+------------------------------------------------------------------------------
+The conductor needs to communicate with musicians via the orchestra network,
+receiving commands from the user interface.
+
+The graphene project comprises:
+- implementation of the network stack for the conductor-musician transport
+
+Project Structure: Instruments
+------------------------------------------------------------------------------
+Each musician has a unique instrument, which needs a driver for its custom
+hardware. In addition, each musician needs to have a single baremetal program
+to be flashed onto its microcontroller's memory, tying together a board, the
+libmusician and libgraphene support libraries, and the instrument driver.
+
+The instruments/* projects comprise:
+- drivers for an instrument's hardware
+- a baremetal program to be flashed onto a musician microcontroller
+

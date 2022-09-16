@@ -1,0 +1,97 @@
+System Architecture
+==============================================================================
+A possible system architecture is given as a block diagram in the
+`robot-orchestra-block-diagram.png` file. Note that many individually listed
+blocks (e.g. Graphene-{IO,Processor} and Conductor Score Buffer) could be
+merged by the use of a larger component (e.g. a SoC or SBC), as could larger
+Controller blocks (e.g. the Musician Controller and Instrument Controller
+could be merged into one powerful microcontroller, such as the RP2040).
+
+This block diagram denotes the following systems:
+- Graphene Controller : probably a SBC (Single-Board Computer) running a
+  webserver or graphical application that allows controlling the robot
+  orchestra in a layperson-friendly way
+- Musician Controller : part of every musician, presents the musician to the
+  Graphene controller in a generic way. The firmware for this system is shared
+  by all instances, and will buffer up the part score, wait for the orchestra
+  start signal, and instruct the Instrument Controller to play each note in
+  turn (at the correct time)
+- Instrument Controller : part of every musician, receives notes and converts
+  these into the control signals required by the hardware. Has no concept of
+  buffering
+
+The two transports listed connect both Graphene to a Musician, and a Musician
+to their Instrument. These have different timing, bandwidth, and access
+requirements, and thus should be kept separate (and depending on how systems
+are merged, might not have to be externally implemented).
+
+System Architecture: Controllers
+------------------------------------------------------------------------------
+The Graphene Controller is, as mentioned, likely to be implemented as a SBC.
+This is due to the human-friendly interface requirements (although it is
+entirely possible during testing to implement a commandline driver program for
+interacting with the orchestra), as a graphical UI or a website UI is likely
+to be the easiest and most intuitive interface to use in the field.
+
+The Graphene Controller will have to support both uploading of orchestral
+scores (and the subsequent reformatting/demultiplexing to map the original
+score into part scores for available musicians) and play controls for the
+orchestra. The user interface for these will have to interact with the
+Graphene-Musician Transport Interface (likely via GPIO), to upload the part
+scores, set configurations, and relay commands to connected musicians.
+
+The Musician Controller is responsible for presenting a single, generic
+description of its connected instrument to the Graphene Controller, and for
+receiving commands from the Graphene Controller. It must buffer its
+(potentially partial) part score, so that it can be forwarded to the
+Instrument Controller when necessary, and receive a configuration for its
+orchestral parameters (tempo, key, which musician bank its in, etc.). When the
+Musician Controller receives commands to play or stop, it must update its
+internal state and forward the relevant state to the Instrument Controller.
+
+The Instrument Controller is responsible for mapping a note description
+received from the Musician Controller into the hardware signals necessary to
+perform the given note. It would connect to any relays or peripherals via IO
+lines, or to the relevant peripheral controller via a higher level protocl.
+
+The Musician Controller firmware is shared between each Musician, as its job
+is the same no matter what instrument is used. The Instrument Controller
+firmware is instead unique to each instrument. This is entirely possible to be
+a logical distinction, and the firmware for both the Musician Controller and
+Firmware Controller could be implemented in one set of source files if both of
+these systems are implemented by a single microprocessor.
+
+System Architecture: Transports
+------------------------------------------------------------------------------
+The Graphene-Musician Transport is a shared bus, connecting each Musician
+Controller to the Graphene Controller. It must be simple and reliable, as it
+could have to be extended or truncated in the field, as Musicians are added or
+removed from the orchestra to play a given piece. Some possible transports,
+and their pros and cons are:
+- CAN : an asynchronous, packet-based protocol
+  - pros : simple and reliable, consisting of only 2 wires, and easy to scale
+    to many nodes. resistant to noise and can use shielded wires for extra
+    protection if necessary
+  - cons : 8-byte payload in standard CAN, low bitrate, and no timing
+    awareness means that timing information has to be sent out-of-band (if
+    microcontroller clock not used instead)
+- Ethernet : a synchronous, frame-based protocol
+  - pros : reliable, high bandwidth, and easy to scale. existing networking
+    technology easy to access (switches). shielded cables exist for excellent
+    noise protection
+  - cons : more complex, larger overheads when sending small packets
+- Wireless : an asynchronous, packet-based protocol
+  - pros : high bandwidths, easy to scale, no wiring required, and lots of
+    existing infrastructure (access points)
+  - cons : slower, risk of network congestion and interference, very complex
+
+The Musician-Instrument Transport is an exclusive bus, connecting each
+Musician Controller to the respective Instrument Controller, and is the most
+likely candidate for a bus that doesn't have to be implemented in the final
+design (i.e. both Musician and Instrument controllers are implemented on the
+same microcontroller).
+
+If it is implemented, tt can be high-bandwidth, and will always be connected,
+as a musician shouldn't have their instrument disconnected in the field and
+still feature in the orchestra. For this reason, it is likely to be
+implemented as a serial or parallel line.

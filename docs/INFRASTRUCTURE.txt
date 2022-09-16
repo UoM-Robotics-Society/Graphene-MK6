@@ -1,0 +1,53 @@
+Infrastructure and Tooling
+==============================================================================
+The robot orchestra consists of multiple nodes, at multiple levels of
+abstraction (ranging from a hosted GUI program, to a hosted system
+application, to embedded baremetal programs), and require different tooling to
+build and run.
+
+The Graphene UI runs as a hosted high-level program. It is likely to be
+written in an interpreted or compiled language, and require the tooling for
+the given language. It will be hosted by an operating system, which must also
+be built or flashed onto the Graphene node.
+
+In addition to the Graphene UI, the Graphene node has to run a program to
+interact with the Graphene-Musician Transport. This will be another hosted
+program, and will either be written in a high-level language (for simplicity
+of implementation) or a low-level language (to reuse existing code for the
+embedded nodes).
+
+Each of the embedded nodes will run a baremetal program flashed onto the
+corresponding node. These programs should be baremetal for size (small to fit
+into as little flash memory as possible), efficiency (by removing implicit
+operations, the programmer has complete control of the device), and simplicity
+(simple, as there are fewer layers of abstraction in between the code and the
+hardware). The use of a framework such as Arduino or another SDK is possible,
+and would tradeoff some control and simplicity for ease and speed of
+implementation.
+
+Infrastructure and Tooling: Build System
+------------------------------------------------------------------------------
+To orchestrate the compiling of the baremetal applications and any other
+auxilliary tools, a simple build system is needed. This build system must
+execute a series of commands, resolving dependencies in commands and
+potentially executing them in parallel to better leverage the host computer.
+
+For this project, a simple shell script would suffice in building the
+baremetal applications (once the toolchain is set up). Alternatively, CMake
+could be used to provide a cross-platform solution (but this would take a lot
+more investment and time).
+
+Infrastructure and Tooling: Baremetal Compiler
+------------------------------------------------------------------------------
+To compile baremetal applications, it is required to have a (cross-)compiler
+configured to produce a freestanding application (one that does not require a
+host OS to run). There are two standard toolchainss for the C family of
+languages: GCC and LLVM.
+
+GCC produces a (cross-)compiler capable of compiling executables for a single
+target, whilst LLVM produces a (cross-)compiler capable of compiling
+executables for a range of targets (set at compiler build time).
+
+For this project, the use of LLVM Clang is recommended, as it is a modern
+compiler capable of compiling C and C++ (via clang++), with a wide range of
+plugins and additional tooling available (e.g. linters, analyzers, profilers).

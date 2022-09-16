@@ -1,0 +1,31 @@
+#!/bin/sh
+
+. "$ROOT/toolchain.sh"
+
+TARGET="graphene"
+
+TARGET_VER_MAJOR="0"
+TARGET_VER_MINOR="1"
+TARGET_VER_PATCH="0"
+TARGET_VER="$TARGET_VER_MAJOR.$TARGET_VER_MINOR.$TARGET_VER_PATCH"
+
+TARGET_FLAGS="
+	$CFLAGS
+
+	$CPPFLAGS
+	-I$PROJECT_ROOT/include
+	-I$ROOT/libgraphene/include
+
+	$LDFLAGS
+	-lgraphene$TOOLCHAIN_SUFFIX
+"
+
+TARGET_TEST_FLAGS="
+	$CFLAGS
+
+	$CPPFLAGS
+	-I$PROJECT_ROOT/include
+	-I$ROOT/libgraphene/include
+
+	$LDFLAGS
+"
